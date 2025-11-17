@@ -1,0 +1,160 @@
+<!-- templates/core/reportes.html -->
+{% extends 'base.html' %}
+
+{% block title %}Reportes - Licorería{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4"><i class="bi bi-graph-up"></i> Reportes</h1>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1">Ventas Hoy</h6>
+                    <h2 class="mb-0">${{ ventas_hoy|floatformat:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1">Últimos 7 Días</h6>
+                    <h2 class="mb-0">${{ ventas_7_dias|floatformat:0 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1">Este Mes</h6>
+                    <h2 class="mb-0">${{ ventas_mes|floatformat:0 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Ventas diarias -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calendar3"></i> Ventas Diarias (Últimos 30 días)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th class="text-center">Ventas</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas_diarias %}
+                                <tr>
+                                    <td>{{ venta.fecha|date:"d/m/Y" }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ venta.cantidad }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>${{ venta.total|floatformat:0 }}</strong>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No hay datos disponibles</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos más vendidos -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Productos Más Vendidos (Este Mes)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th class="text-center">Vendidos</th>
+                                    <th class="text-end">Ingresos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in productos_top %}
+                                <tr>
+                                    <td>
+                                        {% if forloop.counter == 1 %}
+                                        <i class="bi bi-trophy-fill text-warning"></i>
+                                        {% elif forloop.counter == 2 %}
+                                        <i class="bi bi-trophy-fill text-secondary"></i>
+                                        {% elif forloop.counter == 3 %}
+                                        <i class="bi bi-trophy-fill" style="color: #CD7F32;"></i>
+                                        {% else %}
+                                        {{ forloop.counter }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.producto__nombre }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ item.total_vendido }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>${{ item.ingresos|floatformat:0 }}</strong>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No hay datos disponibles</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ventas por método de pago -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-credit-card"></i> Ventas por Método de Pago (Este Mes)</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for metodo in ventas_por_metodo %}
+                <div class="col-md-4 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary mb-2">{{ metodo.get_metodo_pago_display|upper }}</h3>
+                            <h2 class="text-success mb-2">${{ metodo.total|floatformat:0 }}</h2>
+                            <p class="text-muted mb-0">{{ metodo.cantidad }} venta{{ metodo.cantidad|pluralize }}</p>
+                            <div class="progress mt-2" style="height: 10px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {% widthratio metodo.total ventas_mes 100 %}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <p class="text-center text-muted">No hay datos disponibles</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

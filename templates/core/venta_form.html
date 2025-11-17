@@ -1,0 +1,221 @@
+<!-- templates/core/venta_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}Nueva Venta - Licorería{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4"><i class="bi bi-cart-plus"></i> Nueva Venta</h1>
+
+    <form method="post" id="ventaForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Lista de productos -->
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Productos Disponibles</h5>
+                    </div>
+                    <div class="card-body">
+                        <input type="text" id="buscarProducto" class="form-control mb-3" 
+                               placeholder="Buscar producto...">
+                        
+                        <div class="productos-grid" style="max-height: 500px; overflow-y: auto;">
+                            {% for producto in productos %}
+                            <div class="producto-item p-2 border rounded mb-2 cursor-pointer" 
+                                 onclick="agregarProducto({{ producto.id }}, '{{ producto.nombre }}', {{ producto.precio }}, {{ producto.stock }})">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ producto.nombre }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ producto.categoria.nombre }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-success">${{ producto.precio }}</strong>
+                                        <br>
+                                        <small class="badge bg-info">Stock: {{ producto.stock }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carrito -->
+            <div class="col-md-5">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-cart"></i> Carrito de Compra</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="carrito" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                            <p class="text-muted text-center">El carrito está vacío</p>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label for="metodo_pago" class="form-label">Método de Pago</label>
+                            <select class="form-select" id="metodo_pago" name="metodo_pago" required>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="tarjeta">Tarjeta</option>
+                                <option value="transferencia">Transferencia</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0">Total:</h4>
+                            <h3 class="mb-0 text-success">$<span id="total">0.00</span></h3>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 btn-lg" id="btnCompletarVenta" disabled>
+                            <i class="bi bi-check-circle"></i> Completar Venta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let carrito = [];
+let total = 0;
+
+function agregarProducto(id, nombre, precio, stock) {
+    const existente = carrito.find(item => item.id === id);
+    
+    if (existente) {
+        if (existente.cantidad < stock) {
+            existente.cantidad++;
+        } else {
+            alert('No hay suficiente stock disponible');
+            return;
+        }
+    } else {
+        carrito.push({
+            id: id,
+            nombre: nombre,
+            precio: precio,
+            cantidad: 1,
+            stock: stock
+        });
+    }
+    
+    actualizarCarrito();
+}
+
+function eliminarProducto(id) {
+    carrito = carrito.filter(item => item.id !== id);
+    actualizarCarrito();
+}
+
+function cambiarCantidad(id, cantidad) {
+    const item = carrito.find(item => item.id === id);
+    if (item) {
+        cantidad = parseInt(cantidad);
+        if (cantidad > 0 && cantidad <= item.stock) {
+            item.cantidad = cantidad;
+        } else if (cantidad > item.stock) {
+            alert('No hay suficiente stock disponible');
+            return;
+        }
+        actualizarCarrito();
+    }
+}
+
+function actualizarCarrito() {
+    const carritoDiv = document.getElementById('carrito');
+    const totalSpan = document.getElementById('total');
+    const btnCompletarVenta = document.getElementById('btnCompletarVenta');
+    
+    if (carrito.length === 0) {
+        carritoDiv.innerHTML = '<p class="text-muted text-center">El carrito está vacío</p>';
+        totalSpan.textContent = '0.00';
+        btnCompletarVenta.disabled = true;
+        return;
+    }
+    
+    total = 0;
+    let html = '';
+    
+    carrito.forEach(item => {
+        const subtotal = item.precio * item.cantidad;
+        total += subtotal;
+        
+        html += `
+            <div class="carrito-item border-bottom pb-2 mb-2">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <strong>${item.nombre}</strong>
+                        <br>
+                        <small class="text-muted">$${item.precio} × ${item.cantidad}</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="eliminarProducto(${item.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${item.cantidad}" min="1" max="${item.stock}"
+                           onchange="cambiarCantidad(${item.id}, this.value)">
+                </div>
+                <div class="text-end mt-1">
+                    <strong>$${subtotal.toFixed(2)}</strong>
+                </div>
+            </div>
+        `;
+    });
+    
+    carritoDiv.innerHTML = html;
+    totalSpan.textContent = total.toFixed(2);
+    btnCompletarVenta.disabled = false;
+}
+
+document.getElementById('ventaForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (carrito.length === 0) {
+        alert('Debes agregar al menos un producto al carrito');
+        return;
+    }
+    
+    // Crear inputs ocultos para enviar al servidor
+    carrito.forEach(item => {
+        const inputId = document.createElement('input');
+        inputId.type = 'hidden';
+        inputId.name = 'producto_id';
+        inputId.value = item.id;
+        this.appendChild(inputId);
+        
+        const inputCantidad = document.createElement('input');
+        inputCantidad.type = 'hidden';
+        inputCantidad.name = 'cantidad';
+        inputCantidad.value = item.cantidad;
+        this.appendChild(inputCantidad);
+    });
+    
+    this.submit();
+});
+
+// Búsqueda de productos
+document.getElementById('buscarProducto').addEventListener('input', function(e) {
+    const busqueda = e.target.value.toLowerCase();
+    const productos = document.querySelectorAll('.producto-item');
+    
+    productos.forEach(producto => {
+        const texto = producto.textContent.toLowerCase();
+        if (texto.includes(busqueda)) {
+            producto.style.display = '';
+        } else {
+            producto.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

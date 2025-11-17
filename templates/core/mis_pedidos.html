@@ -1,0 +1,81 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mis Pedidos - Licorera{% endblock %}
+
+{% block content %}
+<!-- Navbar -->
+<nav class="bg-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span class="text-xl font-bold text-gray-800">Licorera</span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <a href="{% url 'tienda' %}" class="text-gray-700 hover:text-blue-600 font-medium">
+                    Volver a Tienda
+                </a>
+                <span class="text-gray-600">{{ user.first_name }}</span>
+                <a href="{% url 'logout' %}" class="text-red-600 hover:text-red-700 font-medium">
+                    Salir
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">Mis Pedidos</h1>
+    
+    <div class="space-y-6">
+        {% for pedido in pedidos %}
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex justify-between items-start mb-4 border-b pb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">Pedido #{{ pedido.id }}</h3>
+                    <p class="text-sm text-gray-500">{{ pedido.creado_en|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div class="text-right">
+                    <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold
+                        {% if pedido.estado == 'completada' %}bg-green-100 text-green-700
+                        {% elif pedido.estado == 'pendiente' %}bg-yellow-100 text-yellow-700
+                        {% else %}bg-red-100 text-red-700{% endif %}">
+                        {{ pedido.get_estado_display }}
+                    </span>
+                    <p class="text-xl font-bold text-blue-600 mt-2">${{ pedido.total }}</p>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <h4 class="font-semibold text-gray-700 mb-2">Productos:</h4>
+                {% for item in pedido.items.all %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-700">{{ item.nombre_producto }} x{{ item.cantidad }}</span>
+                    <span class="font-semibold">${{ item.subtotal }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-4 pt-4 border-t">
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold">Método de pago:</span> {{ pedido.get_metodo_pago_display }}
+                </p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-12">
+            <svg class="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+            </svg>
+            <p class="text-gray-500 text-lg mb-4">No tienes pedidos todavía</p>
+            <a href="{% url 'tienda' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition">
+                Ir a la Tienda
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
